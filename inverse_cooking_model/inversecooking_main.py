@@ -14,12 +14,12 @@ import torch.nn as nn
 from PIL import Image
 from torchvision import transforms
 
-from inversecooking.args import get_parser
-from inversecooking.model import get_model
-from inversecooking.utils.output_utils import prepare_output
+from inverse_cooking_model.inversecooking.args import get_parser
+from inverse_cooking_model.inversecooking.model import get_model
+from inverse_cooking_model.inversecooking.utils.output_utils import prepare_output
 
 
-data_dir = './data'
+data_dir = './inverse_cooking_model/data'
 use_gpu = False
 device = torch.device('cuda' if torch.cuda.is_available()
                       and use_gpu else 'cpu')
@@ -37,7 +37,7 @@ def load_vocabularies():
     return ingr_vocab_size, instrs_vocab_size, ingrs_vocab, vocab
 
 
-def load_model():
+def load_model(ingr_vocab_size, instrs_vocab_size):
     t = time.time()
     import sys
     sys.argv = ['']
@@ -98,7 +98,6 @@ def print_output(outs, valid):
     print ('='*20)
 
 
-
 def transf2image(image):
     transf_list = []
     transf_list.append(transforms.Resize(256))
@@ -107,6 +106,7 @@ def transf2image(image):
 
     image_transf = transform(image)
     return image_transf
+
 
 if __name__ == "__main__":
 
@@ -157,7 +157,7 @@ if __name__ == "__main__":
             outs, valid = prepare_output(
                 recipe_ids[0], ingr_ids[0], ingrs_vocab, vocab)
 
-            result = {'output' : outs, 'validity': valid}
+            result = {'output': outs, 'validity': valid}
             if valid['is_valid'] or show_anyways:
                 # pass
                 results.append(result)
