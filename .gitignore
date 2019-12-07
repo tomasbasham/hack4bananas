@@ -1,5 +1,7 @@
-<<<<<<< HEAD
 .DS_Store
+*.ckpt
+*.pkl
+*.pyc
 =======
 __pycache__
->>>>>>> Return a recipe
+
