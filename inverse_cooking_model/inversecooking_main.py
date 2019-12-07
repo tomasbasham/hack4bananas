@@ -81,7 +81,8 @@ def set_data_source(use_urls):
 
 def print_output(outs, valid):
 
-    
+    outs = result['output']
+    valid = result['validity']
     #print ("greedy:", greedy[i], "beam:", beam[i])
 
     BOLD = '\033[1m'
@@ -144,6 +145,7 @@ if __name__ == "__main__":
         plt.show()
         plt.close()
 
+        results = []
         for i in range(numgens):
             with torch.no_grad():
                 outputs = model.sample(image_tensor, greedy=greedy[i],
@@ -155,13 +157,12 @@ if __name__ == "__main__":
             outs, valid = prepare_output(
                 recipe_ids[0], ingr_ids[0], ingrs_vocab, vocab)
 
-            print(outs.items())
-            print(valid.items())
-
+            result = {'output' : outs, 'validity': valid}
             if valid['is_valid'] or show_anyways:
                 # pass
+                results.append(result)
                 print ('RECIPE', i + 1)
-                print_output(outs, valid)
+                print_output(result)
 
             else:
                 print ("Not a valid recipe!")
