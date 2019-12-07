@@ -1,0 +1,14 @@
+---
+language: python
+
+python:
+- '3.6'
+- '3.7'
+
+script: true
+
+deploy:
+  provider: heroku
+  api_key:
+    secure: "ju0J9cj8miwj+lUJSoXoBwvu93n1NdQM3e46aKQDPFEIu76rtACxTj4qOEFJ3oQRBoe0Qxqf+Nf3SQOdfYEN92c7p0QeAHRBpKQBaNyQYJgER9jZAhZScKJFwN17rmcXBrHoKgTCf5INVICmVWlzCInTAunDSvYGDnrHArjsfq1bRUagM1Gf6aQ+rxWjoV0PNHyFb7fgdBlQ18rFA5eDkyGrKfPZ++uxKJN5XZ6iQw0nThO6zNtk6fyr9ky0xRzs1rSRtI2Ou9b4WBX4r/fEObPBMk0NLHmyiiOl8X6+XubHkrYFl31PCEB7uNUMv6j85Sfaub9RPBSEPRqF7EO7IDVD2vyoPzAcWiHhH5rKz8teoCJ1SDMgcAkMAyB69t+4ULh/uDSKfCsXNqnL6dLIZZJi4TePcGdqKYKWa//+za78ND8crv06BigvVcUdohneRwXy0hX8li5ELmGHcctunMyKaKkLn82FRpIhwILXDOJA8mABvzGhJmbaJwWezaXgWTmvwxeEk/FJNmuqM+Gg/0h4kPdBXlZwxUKekdVUTLqEcWKYHHeB5OCjXwol15mayKOu+c+YqTW3oPGEto3h67qdUrhdSkqgupgbBXAfoPsgfyY/QEMR+dOg+2HAtLKxz/Q5WaQ97/h632ejYQFCEUG8tNxYJnLnulf4LyCLj/A="
+  on: master
