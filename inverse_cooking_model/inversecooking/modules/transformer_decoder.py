@@ -13,8 +13,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.modules.utils import _single
-import inversecooking.modules.utils as utils
-from inversecooking.modules.multihead_attention import MultiheadAttention
+import inverse_cooking_model.inversecooking.modules.utils as utils
+from inverse_cooking_model.inversecooking.modules.multihead_attention import MultiheadAttention
 import numpy as np
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 import copy
@@ -314,7 +314,7 @@ class DecoderTransformer(nn.Module):
                 incremental_state,
                 img_features
             )
-            
+
         # T x B x C -> B x T x C
         x = x.transpose(0, 1)
 

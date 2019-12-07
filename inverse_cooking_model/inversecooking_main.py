@@ -14,12 +14,12 @@ import torch.nn as nn
 from PIL import Image
 from torchvision import transforms
 
-from inversecooking.args import get_parser
-from inversecooking.model import get_model
-from inversecooking.utils.output_utils import prepare_output
+from inverse_cooking_model.inversecooking.args import get_parser
+from inverse_cooking_model.inversecooking.model import get_model
+from inverse_cooking_model.inversecooking.utils.output_utils import prepare_output
 
 
-data_dir = './data'
+data_dir = './inverse_cooking_model/data'
 use_gpu = False
 device = torch.device('cuda' if torch.cuda.is_available()
                       and use_gpu else 'cpu')
@@ -37,7 +37,7 @@ def load_vocabularies():
     return ingr_vocab_size, instrs_vocab_size, ingrs_vocab, vocab
 
 
-def load_model():
+def load_model(ingr_vocab_size, instrs_vocab_size):
     t = time.time()
     import sys
     sys.argv = ['']
@@ -80,8 +80,6 @@ def set_data_source(use_urls):
 
 
 def print_output(outs, valid):
-
-    
     #print ("greedy:", greedy[i], "beam:", beam[i])
 
     BOLD = '\033[1m'
@@ -95,7 +93,6 @@ def print_output(outs, valid):
     print ('-'+'\n-'.join(outs['recipe']))
 
     print ('='*20)
-
 
 
 def transf2image(image):
