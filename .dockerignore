@@ -1,0 +1,9 @@
+.git
+__pycache__/
+bot/
+data/
+.dockerignore
+.gitignnore
+.travis.yml
+Dockerfile
+runtime.txt
