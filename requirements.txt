@@ -6,3 +6,9 @@ torch
 torchvision
 numpy
 Pillow
+scipy
+nltk
+tqdm
+lmdb
+tensorflow
+tensorboardX

@@ -18,14 +18,11 @@ from inversecooking.args import get_parser
 from inversecooking.model import get_model
 from inversecooking.utils.output_utils import prepare_output
 
+
 data_dir = './data'
 use_gpu = False
 device = torch.device('cuda' if torch.cuda.is_available() and use_gpu else 'cpu')
 map_loc = None if torch.cuda.is_available() and use_gpu else 'cpu'
-
-
-
-
 
 
 
@@ -78,6 +75,28 @@ def set_data_source(use_urls):
     demo_files = demo_urls if use_urls else demo_imgs
     return demo_files
 
+
+def print_output(outs, valid):
+    
+
+    print ('RECIPE', num_valid)
+    num_valid+=1
+    #print ("greedy:", greedy[i], "beam:", beam[i])
+
+    BOLD = '\033[1m'
+    END = '\033[0m'
+    print (BOLD + '\nTitle:' + END,outs['title'])
+
+    print (BOLD + '\nIngredients:'+ END)
+    print (', '.join(outs['ingrs']))
+
+    print (BOLD + '\nInstructions:'+END)
+    print ('-'+'\n-'.join(outs['recipe']))
+
+    print ('='*20)
+
+    
+
 if __name__ == "__main__":
 
     ingr_vocab_size, instrs_vocab_size, ingrs_vocab, vocab = load_vocabularies()
@@ -123,7 +142,7 @@ if __name__ == "__main__":
         num_valid = 1
         for i in range(numgens):
             with torch.no_grad():
-                outputs = model.sample(image_tensor, greedy=greedy[i], 
+                outputs = model.sample(image_tensor, greedy=greedy[i],
                                     temperature=temperature, beam=beam[i], true_ingrs=None)
                 
             ingr_ids = outputs['ingr_ids'].cpu().numpy()
@@ -131,25 +150,11 @@ if __name__ == "__main__":
                 
             outs, valid = prepare_output(recipe_ids[0], ingr_ids[0], ingrs_vocab, vocab)
             
+
             if valid['is_valid'] or show_anyways:
-                
-                print ('RECIPE', num_valid)
-                num_valid+=1
-                #print ("greedy:", greedy[i], "beam:", beam[i])
-        
-                BOLD = '\033[1m'
-                END = '\033[0m'
-                print (BOLD + '\nTitle:' + END,outs['title'])
 
-                print (BOLD + '\nIngredients:'+ END)
-                print (', '.join(outs['ingrs']))
-
-                print (BOLD + '\nInstructions:'+END)
-                print ('-'+'\n-'.join(outs['recipe']))
-
-                print ('='*20)
-
+                print_output(outs, valid)
+            
             else:
-                pass
                 print ("Not a valid recipe!")
                 print ("Reason: ", valid['reason'])
