@@ -127,6 +127,7 @@ def viz_image(image_url):
 
 def predict(model, image_url, temperature=1.0, beam = [-1, -1, -1, -1], greedy = [True, False, False, False]):
     image = url2Image(image_url)
+    image_transf = transf2image(image)
     image_tensor = to_input_transf(image_transf).unsqueeze(0).to(device)
     
     results = []
