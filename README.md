@@ -2,6 +2,14 @@
 
 Facebook messenger chat bot for generating food recipes.
 
+## Installation
+
+* `git clone git@github.com:tomasbasham/hack4bananas.git`
+* `cd hack4bananas`
+* `./download_data.sh`
+* `docker-compose run --rm --service-ports python`
+* `curl -X POST -H "Content-Type: application/json" -d '{"usl": "some image url"}' localhost:8080/predict`
+
 ## Inspiration
 
 Not being satisfied with being unable to reproduce culinary experiences had at
