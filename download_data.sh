@@ -1,4 +1,4 @@
-data_folder=inverse_cooking_model/data
+data_folder=data
 mkdir -p $data_folder
 
 # These are the files URLs

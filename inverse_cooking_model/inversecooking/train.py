@@ -78,8 +78,6 @@ def main(args):
     make_dir(logs_dir)
     make_dir(checkpoints_dir)
     make_dir(tb_logs)
-    if args.tensorboard:
-        logger = Visualizer(tb_logs, name='visual_results')
 
     # check if we want to resume from last checkpoint of current model
     if args.resume:
@@ -199,10 +197,6 @@ def main(args):
     # Train the model
     start = args.current_epoch
     for epoch in range(start, args.num_epochs):
-
-        # save current epoch for resuming
-        if args.tensorboard:
-            logger.reset()
 
         args.current_epoch = epoch
         # increase / decrase values for moving params
@@ -338,18 +332,6 @@ def main(args):
                             continue
                         this_one = "%s: %.4f" % (k, np.mean(total_loss_dict[k][-args.log_step:]))
                         lossesstr += this_one + ', '
-                    # this only displays nll loss on captions, the rest of losses will be in tensorboard logs
-                    strtoprint = 'Split: %s, Epoch [%d/%d], Step [%d/%d], Losses: %sTime: %.4f' % (split, epoch,
-                                                                                                   args.num_epochs, i,
-                                                                                                   total_step,
-                                                                                                   lossesstr,
-                                                                                                   elapsed_time)
-                    print(strtoprint)
-
-                    if args.tensorboard:
-                        # logger.histo_summary(model=model, step=total_step * epoch + i)
-                        logger.scalar_summary(mode=split+'_iter', epoch=total_step*epoch+i,
-                                              **{k: np.mean(v[-args.log_step:]) for k, v in total_loss_dict.items() if v})
 
                     torch.cuda.synchronize()
                     start = time.time()
@@ -362,11 +344,6 @@ def main(args):
                                 weights=None)
 
                 total_loss_dict['f1'] = ret_metrics['f1']
-            if args.tensorboard:
-                # 1. Log scalar values (scalar summary)
-                logger.scalar_summary(mode=split,
-                                      epoch=epoch,
-                                      **{k: np.mean(v) for k, v in total_loss_dict.items() if v})
 
         # Save the model's best checkpoint if performance was improved
         es_value = np.mean(total_loss_dict[args.es_metric])
@@ -384,9 +361,6 @@ def main(args):
 
         if curr_pat > args.patience:
             break
-
-    if args.tensorboard:
-        logger.close()
 
 
 if __name__ == '__main__':

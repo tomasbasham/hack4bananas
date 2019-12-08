@@ -8,7 +8,6 @@ import glob
 from scipy.misc import imresize
 import torchvision.utils as vutils
 from operator import itemgetter
-from tensorboardX import SummaryWriter
 
 
 class Visualizer():
@@ -54,7 +53,6 @@ class Visualizer():
         for k, v in args.items():
             self.writer.add_scalar('{}/{}'.format(mode, k), v, epoch)
 
-        self.writer.export_scalars_to_json("{}/tensorboard_all_scalars.json".format(self.checkpoints_dir))
 
     def histo_summary(self, model, step):
         """Log a histogram of the tensor of values."""
