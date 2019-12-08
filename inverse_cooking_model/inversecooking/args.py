@@ -139,10 +139,6 @@ def get_parser():
                         help='if used, shows training log in stdout instead of saving it to a file.')
     parser.set_defaults(log_term=False)
 
-    parser.add_argument('--notensorboard', dest='tensorboard', action='store_false',
-                        help='if used, tensorboard logs will not be saved')
-    parser.set_defaults(tensorboard=True)
-
     parser.add_argument('--resume', dest='resume', action='store_true',
                         help='resume training from the checkpoint in model_name')
     parser.set_defaults(resume=False)
