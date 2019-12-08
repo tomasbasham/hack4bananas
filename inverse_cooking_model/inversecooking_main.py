@@ -81,25 +81,6 @@ def set_data_source(use_urls):
     return demo_files
 
 
-def print_output(recipe):
-
-    outs = recipe['output']
-    valid = recipe['validity']
-    #print ("greedy:", greedy[i], "beam:", beam[i])
-
-    BOLD = '\033[1m'
-    END = '\033[0m'
-    print (BOLD + '\nTitle:' + END, outs['title'])
-
-    print (BOLD + '\nIngredients:' + END)
-    print (', '.join(outs['ingrs']))
-
-    print (BOLD + '\nInstructions:'+END)
-    print ('-'+'\n-'.join(outs['recipe']))
-
-    print ('='*20)
-
-
 def transf2image(image):
     transf_list = []
     transf_list.append(transforms.Resize(256))
@@ -132,9 +113,9 @@ def predict(model, ingrs_vocab, vocab, image_url, temperature=1.0, beam=[-1, -1,
     image_transf = transf2image(image)
     image_tensor = to_input_transf(image_transf).unsqueeze(0).to(device)
 
-    numgens = len(greedy)
+    # numgens = len(greedy)
     results = []
-    for i in range(numgens):
+    for i in range(len(greedy)):
         with torch.no_grad():
             outputs = model.sample(image_tensor, greedy=greedy[i],
                                    temperature=temperature, beam=beam[i], true_ingrs=None)
@@ -146,15 +127,13 @@ def predict(model, ingrs_vocab, vocab, image_url, temperature=1.0, beam=[-1, -1,
             recipe_ids[0], ingr_ids[0], ingrs_vocab, vocab)
 
         result = {'output': outs, 'validity': valid}
-        if valid['is_valid'] or show_anyways:
-            # pass
+        if valid['is_valid']:
             results.append(result)
+            return results
 
         else:
-            print ("Not a valid recipe!")
-            print ("Reason: ", valid['reason'])
+            print ("Not a valid recipe! Trying for the {} time".format(i+1))
 
-    return results
 
 
 def url2Image(img_file):
@@ -168,29 +147,3 @@ def path2Image(img_file):
     image_path = os.path.join(image_folder, img_file)
     image = Image.open(image_path).convert('RGB')
     return image
-
-
-if __name__ == "__main__":
-
-    ingr_vocab_size, instrs_vocab_size, ingrs_vocab, vocab = load_vocabularies()
-
-    model = load_model()
-
-    greedy, temperature, beam = get_default_generation_params()
-    numgens = len(greedy)
-
-    # set to true to load images from demo_urls instead of those in test_imgs folder
-    use_urls = True
-    show_anyways = False  # if True, it will show the recipe even if it's not valid
-
-    demo_urls = set_data_source(use_urls)
-
-    for img_url in demo_urls:
-
-        viz_image(img_url)
-
-        candidate_recipes = predict(
-            model, img_url, greedy=greedy, temperature=temperature, beam=beam)
-
-        for recipe in candidate_recipes:
-            print_output(recipe)
