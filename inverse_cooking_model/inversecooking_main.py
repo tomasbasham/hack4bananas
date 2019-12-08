@@ -19,7 +19,7 @@ from inverse_cooking_model.inversecooking.model import get_model
 from inverse_cooking_model.inversecooking.utils.output_utils import prepare_output
 
 
-data_dir = './inverse_cooking_model/data'
+data_dir = './data'
 use_gpu = False
 device = torch.device('cuda' if torch.cuda.is_available()
                       and use_gpu else 'cpu')
