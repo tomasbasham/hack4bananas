@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from models.recipe import Recipe
+import os
 
 import inverse_cooking_model.inversecooking_main as ic
 
