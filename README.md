@@ -1,10 +1,13 @@
 # Granma Bot
 
+Facebook messenger chat bot for generating food recipes.
+
 ## Inspiration
 
-Not being satisfied with being unable to reproduce culinary experiences from looking at
-photographs of food, we've created a Facebook Messenger message bot that generates from
-recipes from the photos that are submitted by our users.
+Not being satisfied with being unable to reproduce culinary experiences had at
+restaurannts or from images of food found on popular image hosting websites (Instagram
+;-)), we've created a Facebook Messenger message bot that generates from recipes from the
+photos that are submitted by our users.
 
 ## Implementation details
 
@@ -13,8 +16,7 @@ and responding with messages returned from a backend application that is communi
 asynchronously.
 
 For the backend we created a small Flask app that integrates a Facebook curated PyTorch
-machine learning model
-[InverseCooking]``(https://github.com/facebookresearch/inversecooking). We preprocess and
+machine learning model [InverseCooking](https://github.com/facebookresearch/inversecooking). We preprocess and
 feed these images to the model which then generates:
 
  - a recipe name

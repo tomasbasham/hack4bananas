@@ -11,6 +11,7 @@
 "use strict";
 
 const Curation = require("./curation"),
+  Api = require("./api"),
   Order = require("./order"),
   Response = require("./response"),
   Care = require("./care"),
@@ -18,6 +19,8 @@ const Curation = require("./curation"),
   GraphAPi = require("./graph-api"),
   i18n = require("../i18n.config");
 
+const recipe = {};
+const image = {};
 module.exports = class Receive {
   constructor(user, webhookEvent) {
     this.user = user;
@@ -28,7 +31,6 @@ module.exports = class Receive {
   // call the appropriate handler function
   handleMessage() {
     let event = this.webhookEvent;
-
     let responses;
 
     try {
@@ -38,7 +40,7 @@ module.exports = class Receive {
         if (message.quick_reply) {
           responses = this.handleQuickReply();
         } else if (message.attachments) {
-          responses = this.handleAttachmentMessage();
+          responses = this.handleAttachmentMessage(this.sendMessageWithUser);
         } else if (message.text) {
           responses = this.handleTextMessage();
         }
@@ -116,26 +118,56 @@ module.exports = class Receive {
     return response;
   }
 
-  // Handles mesage events with attachments
-  handleAttachmentMessage() {
-    let response;
+  // Example API
+  test() {
+    Api.connectAPI('', (err, res, body) => {
+      console.log(body);
+    });
+  }
 
-    // Get the attachment
-    let attachment = this.webhookEvent.message.attachments[0];
-    console.log("Received attachment:", `${attachment} for ${this.user.psid}`);
-
-    response = Response.genQuickReply(i18n.__("fallback.attachment"), [
+  getUserOptions() {
+    return Response.genQuickReply(i18n.__("recipe.guidance"), [
       {
-        title: i18n.__("menu.help"),
-        payload: "CARE_HELP"
+        title: i18n.__("recipe.showingredients"),
+        payload: "SHOW_INGREDIENTS"
       },
       {
-        title: i18n.__("menu.start_over"),
-        payload: "GET_STARTED"
-      }
+        title: i18n.__("recipe.showinstructions"),
+        payload: "SHOW_INSTRUCTIONS"
+      },
+      {
+        title: i18n.__("recipe.export"),
+        payload: "EXPORT_RECIPE"
+      },
+      {
+        title: i18n.__("upload.anotherpicture"),
+        payload: "UPLOAD_PICTURE"
+      },
     ]);
+  }
 
-    return response;
+  // Handles mesage events with attachments
+  handleAttachmentMessage(callbackFunc) {
+    // Get the attachment
+    const attachment = this.webhookEvent.message.attachments[0];
+    console.log("Received attachment:", `${attachment} for ${this.user.psid}`);
+    Api.connectAPI(attachment.payload, (err, res, body) => {
+      console.log(`Response: ${body}` );
+      if (!body) return;
+      // body = JSON.parse(body);
+      callbackFunc(
+        Response.genText(i18n.__("recipe.name", {
+          name: body.name
+        })), 2000, this.user);
+      callbackFunc(this.getUserOptions(), 4000, this.user);
+      let randomString =  Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      randomString = randomString.toUpperCase();
+      recipe[this.user.psid] = body;
+      recipe[this.user.psid].ref = randomString;
+      recipe[recipe[this.user.psid].ref] = JSON.parse(JSON.stringify(recipe[this.user.psid]));
+      image[recipe[this.user.psid].ref] = attachment.payload.url;
+    });
+    return Response.genText(i18n.__("upload.thinking"));
   }
 
   // Handles mesage events with quick replies
@@ -173,11 +205,140 @@ module.exports = class Receive {
 
     // Log CTA event in FBA
     GraphAPi.callFBAEventsAPI(this.user.psid, payload);
-
     let response;
-
-    // Set the response based on the payload
-    if (
+    if (payload === "SHOW_INGREDIENTS") {
+      response = [];
+      const items = recipe[this.user.psid].ingredients;
+      let text = '';
+      for (const i in items) {
+        text += (i > 0 ? ', ' : '') + items[i];
+      }
+      response.push(
+        Response.genText(i18n.__("recipe.text", {
+          text: text
+        }))
+      )
+      response.push(this.getUserOptions());
+    } else if (payload === "SHOW_INSTRUCTIONS" || payload.startsWith("SHOW_INSTRUCTIONS")) {
+        const currentStep = payload.split("SHOW_INSTRUCTIONS")[1] | '0';
+        const stepNumber = parseInt(currentStep);
+        response = [];
+        const items = recipe[this.user.psid].steps;
+        response.push(
+          Response.genText(i18n.__("recipe.text", {
+            text: (items[stepNumber])
+          }))
+        );
+        if (stepNumber + 1 === items.length) {
+          response.push(this.getUserOptions());
+        } else {
+          response.push(
+            Response.genQuickReply(i18n.__("recipe.tellnext"), [
+              {
+                title: i18n.__("recipe.next"),
+                payload: `SHOW_INSTRUCTIONS${stepNumber + 1}`
+              },
+              {
+                title: i18n.__("recipe.finish"),
+                payload: 'FINISH_INSTRUCTIONS'
+              }
+            ])
+          );
+        }
+    } else if (payload === "FINISH_INSTRUCTIONS") {
+      response = this.getUserOptions();
+    } else if (payload === "EXPORT_RECIPE") {
+      response = Response.genQuickReply(i18n.__("recipe.exportquestions"), [
+        {
+          title: i18n.__("recipe.sendtofriends"),
+          payload: "SEND_TO_FRIENDS"
+        },
+        {
+          title: i18n.__("recipe.buyingredients"),
+          payload: "BUY_INGREDIENTS"
+        },
+        {
+          title: i18n.__("recipe.download"),
+          payload: "DOWNLOAD_RECIPE"
+        },
+        {
+          title: i18n.__("recipe.feedback"),
+          payload: "FEEDBACK_RECIPE"
+        },
+      ]);
+    } else if (payload === "SEND_TO_FRIENDS") {
+      response = [Response.genGenericTemplate(
+        image[recipe[this.user.psid].ref],
+        i18n.__("recipe.forward", {
+          name: recipe[this.user.psid].name
+        }),
+        '',
+        [
+          Response.genWebUrlButton(
+            i18n.__("recipe.getrecipe"),
+            `https://m.me/106407507515158?ref=RECIPE-${recipe[this.user.psid].ref}`
+          ),
+        ]
+      )];
+    } else if (payload === "BUY_INGREDIENTS") {
+      response = [Response.genGenericTemplate(
+        'https://upload.wikimedia.org/wikipedia/en/thumb/b/b0/Tesco_Logo.svg/1024px-Tesco_Logo.svg.png',
+        i18n.__("recipe.forward", {
+          name: `${recipe[this.user.psid].name} ingredients`
+        }),
+        '',
+        [
+          Response.genWebUrlButton(
+            i18n.__("recipe.buyingredients"),
+            `https://m.me/106407507515158?ref=RECIPE-${recipe[this.user.psid].ref}`
+          ),
+        ]
+      )];
+    } else if (payload === "FEEDBACK_RECIPE") {
+      response = Response.genQuickReply(i18n.__("feedback.question"), [
+        {
+          title: i18n.__("feedback.excellence"),
+          payload: "AFTER_FEEDBACK"
+        },
+        {
+          title: i18n.__("feedback.good"),
+          payload: "AFTER_FEEDBACK"
+        },
+        {
+          title: i18n.__("feedback.soso"),
+          payload: "AFTER_FEEDBACK"
+        },
+        {
+          title: i18n.__("feedback.dislike"),
+          payload: "AFTER_FEEDBACK"
+        },
+      ]);
+    } else if (payload === "AFTER_FEEDBACK") {
+      response = [
+        Response.genText(i18n.__("feedback.thankyou")),
+        this.getUserOptions()
+      ];
+    } else if (payload.startsWith("RECIPE")) {
+      const ref = payload.split("RECIPE-")[1];
+      recipe[this.user.psid] = recipe[ref];
+      response = this.getUserOptions();
+    } else if (payload === "UPLOAD_PICTURE") {
+      response = Response.genText(i18n.__("upload.hint"));
+    } else if (payload === "NO_INTENT") {
+      const misunderstand = Response.genText(i18n.__("get_started.welcome"));
+      const question = Response.genQuickReply(i18n.__("get_started.guidance"), [
+        {
+          title: i18n.__("upload.picture"),
+          payload: "UPLOAD_PICTURE"
+        },
+        {
+          title: i18n.__("upload.other"),
+          payload: "NO_INTENT"
+        }
+      ]);
+      response = [misunderstand, question];
+    }
+    else if (
       payload === "GET_STARTED" ||
       payload === "DEVDOCS" ||
       payload === "GITHUB"
@@ -223,17 +384,16 @@ module.exports = class Receive {
 
   handlePrivateReply(type,object_id) {
     let welcomeMessage = i18n.__("get_started.welcome") + " " +
-      i18n.__("get_started.guidance") + ". " +
-      i18n.__("get_started.help");
+      i18n.__("get_started.guidance") + ".";
 
     let response = Response.genQuickReply(welcomeMessage, [
       {
-        title: i18n.__("menu.suggestion"),
-        payload: "CURATION"
+        title: i18n.__("upload.picture"),
+        payload: "UPLOAD_PICTURE"
       },
       {
-        title: i18n.__("menu.help"),
-        payload: "CARE_HELP"
+        title: i18n.__("upload.other"),
+        payload: "NO_INTENT"
       }
     ]);
 
@@ -270,6 +430,38 @@ module.exports = class Receive {
       requestBody = {
         recipient: {
           id: this.user.psid
+        },
+        message: response,
+        persona_id: persona_id
+      };
+    }
+
+    setTimeout(() => GraphAPi.callSendAPI(requestBody), delay);
+  }
+
+  sendMessageWithUser(response, delay = 0, user) {
+    // Check if there is delay in the response
+    if ("delay" in response) {
+      delay = response["delay"];
+      delete response["delay"];
+    }
+
+    // Construct the message body
+    let requestBody = {
+      recipient: {
+        id: user.psid
+      },
+      message: response
+    };
+
+    // Check if there is persona id in the response
+    if ("persona_id" in response) {
+      let persona_id = response["persona_id"];
+      delete response["persona_id"];
+
+      requestBody = {
+        recipient: {
+          id: user.psid
         },
         message: response,
         persona_id: persona_id
