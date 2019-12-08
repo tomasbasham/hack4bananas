@@ -132,6 +132,7 @@ def predict(model, ingrs_vocab, vocab, image_url, temperature=1.0, beam=[-1, -1,
     image_transf = transf2image(image)
     image_tensor = to_input_transf(image_transf).unsqueeze(0).to(device)
 
+    numgens = len(greedy)
     results = []
     for i in range(numgens):
         with torch.no_grad():
