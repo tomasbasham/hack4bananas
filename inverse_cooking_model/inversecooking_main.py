@@ -24,7 +24,7 @@ use_gpu = False
 device = torch.device('cuda' if torch.cuda.is_available()
                       and use_gpu else 'cpu')
 map_loc = None if torch.cuda.is_available() and use_gpu else 'cpu'
-
+image_folder = os.path.join(data_dir, 'demo_imgs')
 
 def load_vocabularies():
     ingrs_vocab = pickle.load(
@@ -79,10 +79,10 @@ def set_data_source(use_urls):
     return demo_files
 
 
-def print_output(outs, valid):
+def print_output(recipe):
 
-    outs = result['output']
-    valid = result['validity']
+    outs = recipe['output']
+    valid = recipe['validity']
     #print ("greedy:", greedy[i], "beam:", beam[i])
 
     BOLD = '\033[1m'
@@ -108,6 +108,63 @@ def transf2image(image):
     return image_transf
 
 
+
+def get_default_generation_params():
+    greedy = [True, False, False, False]
+    beam = [-1, -1, -1, -1]
+    temperature = 1.0
+    return greedy, temperature, beam
+
+
+def viz_image(image_url):
+    image = url2Image(img_urls)
+    image_transf = transf2image(image)
+    plt.imshow(image_transf)
+    plt.axis('off')
+    plt.show()
+    plt.close()
+
+
+def predict(model, image_url, temperature=1.0, beam = [-1, -1, -1, -1], greedy = [True, False, False, False]):
+    image = url2Image(image_url)
+    image_tensor = to_input_transf(image_transf).unsqueeze(0).to(device)
+    
+    results = []
+    for i in range(numgens):
+        with torch.no_grad():
+            outputs = model.sample(image_tensor, greedy=greedy[i],
+                                   temperature=temperature, beam=beam[i], true_ingrs=None)
+
+        ingr_ids = outputs['ingr_ids'].cpu().numpy()
+        recipe_ids = outputs['recipe_ids'].cpu().numpy()
+
+        outs, valid = prepare_output(
+            recipe_ids[0], ingr_ids[0], ingrs_vocab, vocab)
+
+        result = {'output': outs, 'validity': valid}
+        if valid['is_valid'] or show_anyways:
+            # pass
+            results.append(result)
+
+        else:
+            print ("Not a valid recipe!")
+            print ("Reason: ", valid['reason'])
+
+    return results
+
+
+def url2Image(img_file):
+    response = requests.get(img_file)
+    image = Image.open(BytesIO(response.content))
+    return image
+
+
+def path2Image(img_file):
+    global image_folder
+    image_path = os.path.join(image_folder, img_file)
+    image = Image.open(image_path).convert('RGB')
+    return image
+
 if __name__ == "__main__":
 
     ingr_vocab_size, instrs_vocab_size, ingrs_vocab, vocab = load_vocabularies()
@@ -116,54 +173,20 @@ if __name__ == "__main__":
 
     to_input_transf = generate_img_transforms()
 
-    greedy = [True, False, False, False]
-    beam = [-1, -1, -1, -1]
-    temperature = 1.0
+    greedy, temperature, beam = get_default_generation_params()
     numgens = len(greedy)
 
     # set to true to load images from demo_urls instead of those in test_imgs folder
-    use_urls = False
+    use_urls = True
     show_anyways = False  # if True, it will show the recipe even if it's not valid
-    image_folder = os.path.join(data_dir, 'demo_imgs')
+    
+    demo_urls = set_data_source(use_urls)
 
-    demo_files = set_data_source(use_urls)
+    for img_url in demo_urls:
+        
+        viz_image(img_url)
+        
+        candidate_recipes = predict(model, img_url, greedy=greedy, temperature=temperature, beam=beam)
 
-    for img_file in demo_files:
-
-        if use_urls:
-            response = requests.get(img_file)
-            image = Image.open(BytesIO(response.content))
-        else:
-            image_path = os.path.join(image_folder, img_file)
-            image = Image.open(image_path).convert('RGB')
-
-        image_transf = transf2image(image)
-        image_tensor = to_input_transf(image_transf).unsqueeze(0).to(device)
-
-        plt.imshow(image_transf)
-        plt.axis('off')
-        plt.show()
-        plt.close()
-
-        results = []
-        for i in range(numgens):
-            with torch.no_grad():
-                outputs = model.sample(image_tensor, greedy=greedy[i],
-                                       temperature=temperature, beam=beam[i], true_ingrs=None)
-
-            ingr_ids = outputs['ingr_ids'].cpu().numpy()
-            recipe_ids = outputs['recipe_ids'].cpu().numpy()
-
-            outs, valid = prepare_output(
-                recipe_ids[0], ingr_ids[0], ingrs_vocab, vocab)
-
-            result = {'output': outs, 'validity': valid}
-            if valid['is_valid'] or show_anyways:
-                # pass
-                results.append(result)
-                print ('RECIPE', i + 1)
-                print_output(result)
-
-            else:
-                print ("Not a valid recipe!")
-                print ("Reason: ", valid['reason'])
+        for recipe in candidate_recipes:
+            print_output(recipe)
