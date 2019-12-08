@@ -8,7 +8,7 @@ Facebook messenger chat bot for generating food recipes.
 * `cd hack4bananas`
 * `./download_data.sh`
 * `docker-compose run --rm --service-ports python`
-* `curl -X POST -H "Content-Type: application/json" -d '{"usl": "some image url"}' localhost:8080/predict`
+* `curl -X POST -H "Content-Type: application/json" -d '{"url": "some image url"}' localhost:8080/predict`
 
 ## Inspiration
 
