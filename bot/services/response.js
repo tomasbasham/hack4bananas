@@ -118,7 +118,7 @@ module.exports = class Response {
       type: "web_url",
       title: title,
       url: url,
-      messenger_extensions: true
+      messenger_extensions: false
     };
 
     return response;
@@ -131,19 +131,17 @@ module.exports = class Response {
       })
     );
 
-    let guide = this.genText(i18n.__("get_started.guidance"));
-
-    let curation = this.genQuickReply(i18n.__("get_started.help"), [
+    let question = this.genQuickReply(i18n.__("get_started.guidance"), [
       {
-        title: i18n.__("menu.suggestion"),
-        payload: "CURATION"
+        title: i18n.__("upload.picture"),
+        payload: "UPLOAD_PICTURE"
       },
       {
-        title: i18n.__("menu.help"),
-        payload: "CARE_HELP"
+        title: i18n.__("upload.other"),
+        payload: "NO_INTENT"
       }
     ]);
 
-    return [welcome, guide, curation];
+    return [welcome, question];
   }
 };
