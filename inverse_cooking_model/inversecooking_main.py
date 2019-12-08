@@ -26,10 +26,12 @@ device = torch.device('cuda' if torch.cuda.is_available()
 map_loc = None if torch.cuda.is_available() and use_gpu else 'cpu'
 image_folder = os.path.join(data_dir, 'demo_imgs')
 
+
 def load_vocabularies():
     ingrs_vocab = pickle.load(
         open(os.path.join(data_dir, 'ingr_vocab.pkl'), 'rb'))
-    vocab = pickle.load(open(os.path.join(data_dir, 'instr_vocab.pkl'), 'rb'))
+    vocab = pickle.load(
+        open(os.path.join(data_dir, 'instr_vocab.pkl'), 'rb'))
 
     ingr_vocab_size = len(ingrs_vocab)
     instrs_vocab_size = len(vocab)
@@ -108,7 +110,6 @@ def transf2image(image):
     return image_transf
 
 
-
 def get_default_generation_params():
     greedy = [True, False, False, False]
     beam = [-1, -1, -1, -1]
@@ -117,7 +118,7 @@ def get_default_generation_params():
 
 
 def viz_image(image_url):
-    image = url2Image(img_urls)
+    image = url2Image(img_url)
     image_transf = transf2image(image)
     plt.imshow(image_transf)
     plt.axis('off')
@@ -125,11 +126,12 @@ def viz_image(image_url):
     plt.close()
 
 
-def predict(model, image_url, temperature=1.0, beam = [-1, -1, -1, -1], greedy = [True, False, False, False]):
+def predict(model, ingrs_vocab, vocab, image_url, temperature=1.0, beam=[-1, -1, -1, -1], greedy=[True, False, False, False]):
+    to_input_transf = generate_img_transforms()
     image = url2Image(image_url)
     image_transf = transf2image(image)
     image_tensor = to_input_transf(image_transf).unsqueeze(0).to(device)
-    
+
     results = []
     for i in range(numgens):
         with torch.no_grad():
@@ -166,13 +168,12 @@ def path2Image(img_file):
     image = Image.open(image_path).convert('RGB')
     return image
 
+
 if __name__ == "__main__":
 
     ingr_vocab_size, instrs_vocab_size, ingrs_vocab, vocab = load_vocabularies()
 
     model = load_model()
-
-    to_input_transf = generate_img_transforms()
 
     greedy, temperature, beam = get_default_generation_params()
     numgens = len(greedy)
@@ -180,14 +181,15 @@ if __name__ == "__main__":
     # set to true to load images from demo_urls instead of those in test_imgs folder
     use_urls = True
     show_anyways = False  # if True, it will show the recipe even if it's not valid
-    
+
     demo_urls = set_data_source(use_urls)
 
     for img_url in demo_urls:
-        
+
         viz_image(img_url)
-        
-        candidate_recipes = predict(model, img_url, greedy=greedy, temperature=temperature, beam=beam)
+
+        candidate_recipes = predict(
+            model, img_url, greedy=greedy, temperature=temperature, beam=beam)
 
         for recipe in candidate_recipes:
             print_output(recipe)
