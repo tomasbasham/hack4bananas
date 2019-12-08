@@ -9,8 +9,13 @@ def initialize_model():
     ingr_size, instrs_size, _, _ = ic.load_vocabularies()
     return ic.load_model(ingr_size, instrs_size)
 
-@app.route('/predict', methods=['GET'])
+@app.route('/predict', methods=['POST'])
 def predict():
+    payload = request.get_json()
+
+    if not "url" in payload:
+        return jsonify(error="No image specified"), 400
+
     r = Recipe(name="Hello",
                ingredients=["one","two"],
                steps=["first do this", "then do that"])
